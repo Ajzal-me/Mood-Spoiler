@@ -1,5 +1,8 @@
+// src/components/ChatInterface.tsx
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User } from 'lucide-react';
+import { getAIBotReply } from '../utils/api';  // Adjust path if needed
 
 interface Message {
   id: string;
@@ -10,7 +13,7 @@ interface Message {
 }
 
 interface ChatInterfaceProps {
-  detectedEmotion: string;
+  detectedEmotion: string; // Passed from WebcamFeed or parent component
 }
 
 const validEmotions = ['happy', 'sad', 'angry', 'surprised', 'neutral', 'confused'] as const;
@@ -73,50 +76,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ detectedEmotion }) => {
     scrollToBottom();
   }, [messages]);
 
-  // Defensive check for valid emotions, default to 'neutral'
-  const getOppositeResponse = (emotion: string, userMessage?: string) => {
-    const responses: Record<EmotionKey, string[]> = {
-      happy: [
-        "Ugh, all that happiness is making me sick. Here's some rain for your parade: Life is just a series of disappointments. ☔",
-        "Oh great, another cheerful person. Did you know that 99% of lottery winners go broke? Your joy is temporary. 😔",
-        "Stop smiling! Here's something depressing: We're all just floating on a rock in space, completely insignificant. 🌑",
-      ],
-      sad: [
-        "Tears? Really? Let me cheer you up with this AMAZING fact: You have a better chance of being struck by lightning than winning the lottery! ⚡",
-        "Aww, someone's having a bad day? Well, here's the thing - statistically, tomorrow will probably be worse! 📈",
-        "Crying won't help! But you know what's hilarious? We're all just carbon-based life forms worried about meaningless stuff! 🎉",
-      ],
-      angry: [
-        "Anger issues? Let me calm you down with some zen wisdom: A snail can sleep for three years straight. Aren't you jealous? 🐌💤",
-        "Mad about something? Here's a peaceful thought: Bamboo can grow up to 3 feet in 24 hours. Nature is so serene! 🎋",
-        "Rage mode activated? Time for some tranquility: Did you know that otters hold hands while sleeping? So wholesome! 🦦💕",
-      ],
-      surprised: [
-        "Shocked? Meh. Here's something boring: Paint drying takes 6-8 hours depending on humidity. Riveting stuff. 😴",
-        "Wow, you're surprised? How mundane. The average person walks past 36 murderers in their lifetime. Sweet dreams! 😈",
-        "Amazed by something? Here's dullness: Grass grows at a rate of 2-6 inches per month. Absolutely thrilling. 🌱",
-      ],
-      neutral: [
-        "Feeling nothing? Perfect! Here's some chaos: Bananas are berries but strawberries aren't! Your world is a lie! 🍌🍓",
-        "Neutral face, eh? Time for some drama: There are more possible games of chess than atoms in the observable universe! Mind = blown! 🤯",
-        "Meh expression detected. Here's some excitement: You're currently hurtling through space at 67,000 mph! Wheee! 🚀",
-      ],
-      confused: [
-        "Confused? Let me make it crystal clear: Water isn't wet, it makes things wet. You're welcome for the clarity! 💧",
-        "Puzzled look? Here's perfect clarity: The word 'set' has 464 different meanings. Hope that helps! 📚",
-        "Lost? Here's some direction: If you fold a piece of paper 103 times, it would be thicker than the universe! Simple! 📄",
-      ],
-    };
-
-    const key: EmotionKey = validEmotions.includes(emotion as EmotionKey)
-      ? (emotion as EmotionKey)
-      : 'neutral';
-
-    const emotionResponses = responses[key];
-    return emotionResponses[Math.floor(Math.random() * emotionResponses.length)];
-  };
-
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputText.trim()) return;
 
     const userMessage: Message = {
@@ -126,23 +86,36 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ detectedEmotion }) => {
       timestamp: new Date(),
     };
 
+    // Add user message immediately
     setMessages((prev) => [...prev, userMessage]);
     setInputText('');
     setIsTyping(true);
 
-    // Simulate bot thinking time
-    setTimeout(() => {
+    try {
+      // Call your AI API utility with user text and detected emotion
+      const botReplyText = await getAIBotReply(inputText, detectedEmotion);
+
       const botResponse: Message = {
         id: crypto.randomUUID(),
-        text: getOppositeResponse(detectedEmotion, inputText),
+        text: botReplyText,
         sender: 'bot',
         timestamp: new Date(),
         emotion: detectedEmotion,
       };
 
       setMessages((prev) => [...prev, botResponse]);
-      setIsTyping(false);
-    }, 1000 + Math.random() * 2000);
+    } catch (error) {
+      // Fallback message on API error
+      const botResponse: Message = {
+        id: crypto.randomUUID(),
+        text: "Oops! The mood spoiling AI is having a bad day. Try again later.",
+        sender: 'bot',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, botResponse]);
+    }
+
+    setIsTyping(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -187,18 +160,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ detectedEmotion }) => {
                   <div
                     className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce"
                     style={{ animationDelay: '0.1s' }}
-                  ></div>
+                  />
                   <div
                     className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce"
                     style={{ animationDelay: '0.2s' }}
-                  ></div>
+                  />
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Invisible div to scroll to */}
+        {/* Scroll target */}
         <div ref={messagesEndRef} />
       </div>
 
@@ -227,4 +200,4 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ detectedEmotion }) => {
   );
 };
 
-export default ChatInterface
+export default ChatInterface;
