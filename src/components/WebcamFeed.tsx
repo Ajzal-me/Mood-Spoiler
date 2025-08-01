@@ -15,7 +15,7 @@ const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetected }) => {
 
   useEffect(() => {
     let stream: MediaStream | null = null;
-    let emotionInterval: NodeJS.Timeout;
+    let emotionInterval: ReturnType<typeof setInterval>;
 
     const startWebcam = async () => {
       try {
@@ -78,7 +78,7 @@ const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetected }) => {
   };
 
   return (
-    <div className="relative w-full h-full bg-gray-900 rounded-2xl overflow-hidden border border-gray-700">
+    <div className="relative w-full h-[700px] max-h-[90vh] bg-gray-900 rounded-2xl overflow-hidden border border-gray-700">
       {error ? (
         <div className="flex items-center justify-center h-full flex-col space-y-4">
           <CameraOff className="w-16 h-16 text-gray-500" />
