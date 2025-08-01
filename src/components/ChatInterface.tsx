@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User } from 'lucide-react';
-import { getAIBotReply } from '../utils/api';  // Adjust path if needed
+import { getAIBotReply } from '../utils/api';
 
 interface Message {
   id: string;
@@ -13,15 +13,11 @@ interface Message {
 }
 
 interface ChatInterfaceProps {
-  detectedEmotion: string; // Passed from WebcamFeed or parent component
+  detectedEmotion: string;
 }
-
-const validEmotions = ['happy', 'sad', 'angry', 'surprised', 'neutral', 'confused'] as const;
-type EmotionKey = typeof validEmotions[number];
 
 const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
   const isUser = message.sender === 'user';
-
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-fadeInUp`}>
       <div
@@ -55,26 +51,30 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
 };
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ detectedEmotion }) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: crypto.randomUUID(),
-      text: "Hi there! I'm your Mood Spoiler bot. I'll detect your emotions and give you the OPPOSITE vibes! 😈",
-      sender: 'bot',
-      timestamp: new Date(),
-    },
-  ]);
-
+  const [messages, setMessages] = useState<Message[]>(
+    [
+      {
+        id: crypto.randomUUID(),
+        text: "Hi there! I'm your Mood Spoiler bot. I'll detect your emotions and give you the OPPOSITE vibes! 😈",
+        sender: 'bot',
+        timestamp: new Date(),
+      },
+    ]
+  );
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Helper to convert messages to API format
+  const getHistoryForAPI = () =>
+    messages.map(m => ({
+      role: m.sender,
+      content: m.text,
+    }));
 
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
@@ -87,13 +87,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ detectedEmotion }) => {
     };
 
     // Add user message immediately
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInputText('');
     setIsTyping(true);
 
     try {
-      // Call your AI API utility with user text and detected emotion
-      const botReplyText = await getAIBotReply(inputText, detectedEmotion);
+      // Pass full history including new user message
+      const botReplyText = await getAIBotReply(
+        [...getHistoryForAPI(), { role: 'user', content: inputText }],
+        detectedEmotion
+      );
 
       const botResponse: Message = {
         id: crypto.randomUUID(),
@@ -103,16 +106,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ detectedEmotion }) => {
         emotion: detectedEmotion,
       };
 
-      setMessages((prev) => [...prev, botResponse]);
+      setMessages(prev => [...prev, botResponse]);
     } catch (error) {
-      // Fallback message on API error
       const botResponse: Message = {
         id: crypto.randomUUID(),
         text: "Oops! The mood spoiling AI is having a bad day. Try again later.",
         sender: 'bot',
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, botResponse]);
+      setMessages(prev => [...prev, botResponse]);
     }
 
     setIsTyping(false);

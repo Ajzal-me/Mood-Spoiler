@@ -1,6 +1,9 @@
 // src/utils/api.ts
 
-export async function getAIBotReply(userText: string, detectedEmotion: string): Promise<string> {
+export async function getAIBotReply(
+  messagesHistory: { role: "user" | "bot"; content: string }[],
+  detectedEmotion: string
+): Promise<string> {
   const systemPrompt = `
 You are "Mood Spoiler Bot", a sarcastic and witty chatbot who always replies with the opposite mood of the user's current emotion.
 
@@ -10,24 +13,27 @@ You are "Mood Spoiler Bot", a sarcastic and witty chatbot who always replies wit
 4. Your replies should be playful, sarcastic, and entertaining.
 5. Do NOT repeat the user's message or emotion. Respond only as the chatbot.
 
-User spoken message: "${userText}"
-Detected facial emotion: "${detectedEmotion}"
+The detected facial emotion for the latest user message is: "${detectedEmotion}"
 `.trim();
 
-const messages = [
-  { role: "system", content: systemPrompt },
-  { role: "user", content: userText },
-];
+  // Convert your history to the API format
+  const messages = [
+    { role: "system", content: systemPrompt },
+    ...messagesHistory.map(m => ({
+      role: m.role === "bot" ? "assistant" : "user",
+      content: m.content
+    }))
+  ];
 
   try {
     const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_HF_TOKEN}`,  // Make sure your .env has VITE_HF_TOKEN
+        'Authorization': `Bearer ${import.meta.env.VITE_HF_TOKEN}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "zai-org/GLM-4.5:novita", // or your preferred chat model
+        model: "zai-org/GLM-4.5:novita",
         messages: messages,
       }),
     });
@@ -39,14 +45,12 @@ const messages = [
     }
 
     const data = await response.json();
-    // The reply is in data.choices[0].message.content per Hugging Face chat API
     const reply = data.choices?.[0]?.message?.content;
 
     if (!reply) {
       return "Couldn't get bot response!";
     }
 
-    // Remove any <think> tags and trim whitespace
     return reply.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
   } catch (error) {
