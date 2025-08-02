@@ -231,15 +231,21 @@ const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetected }) => {
             setIsActive(true);
             
             // Start appropriate detection method
-            const detectFunction = {
-              faceapi: detectEmotionsFaceAPI,
-              tensorflow: detectEmotionsTensorFlow,
-              simulation: detectEmotionsSimulation
-            }[detectionMode];
-            
-            if (detectFunction) {
-              detectionInterval = setInterval(detectFunction, detectionMode === 'simulation' ? 3000 : 1000);
+            if (detectionMode === 'faceapi' || detectionMode === 'tensorflow' || detectionMode === 'simulation') {
+              const detectFunction = {
+                faceapi: detectEmotionsFaceAPI,
+                tensorflow: detectEmotionsTensorFlow,
+                simulation: detectEmotionsSimulation
+              }[detectionMode];
+
+              if (detectFunction) {
+                detectionInterval = setInterval(
+                  detectFunction,
+                  detectionMode === 'simulation' ? 3000 : 1000
+                );
+              }
             }
+            
           };
         }
       } catch (err) {
