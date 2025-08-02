@@ -32,7 +32,7 @@ The detected facial emotion for the latest user message is: "${detectedEmotion}"
     const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${VITE_HF_TOKEN}`,
+        'Authorization': `Bearer ${import.meta.env.VITE_HF_TOKEN}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
