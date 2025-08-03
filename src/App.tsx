@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import WebcamFeed from './components/WebcamFeed';
 import ChatInterface from './components/ChatInterface';
 import { Camera, MessageSquare, Zap } from 'lucide-react';
 
 function App() {
   const [detectedEmotion, setDetectedEmotion] = useState('neutral');
+  const [showInfoCards, setShowInfoCards] = useState(true);
 
   const handleEmotionDetected = (emotion: string) => {
     setDetectedEmotion(emotion);
   };
+
+  useEffect(()=>{
+    const timer = setTimeout(()=>setShowInfoCards(false),2500);
+    return () => clearTimeout(timer);
+  })
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -66,6 +73,7 @@ function App() {
         </div>
 
         {/* Info Cards */}
+        { showInfoCards && (
         <div className="mt-12 grid md:grid-cols-3 gap-6">
           <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
             <div className="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center mb-4">
@@ -97,6 +105,7 @@ function App() {
             </p>
           </div>
         </div>
+        )}
       </main>
     </div>
   );
