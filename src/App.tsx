@@ -12,7 +12,7 @@ function App() {
   };
 
   useEffect(()=>{
-    const timer = setTimeout(()=>setShowInfoCards(false),2500);
+    const timer = setTimeout(()=>setShowInfoCards(false),5000);
     return () => clearTimeout(timer);
   })
 
